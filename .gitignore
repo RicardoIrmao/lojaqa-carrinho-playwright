@@ -1,0 +1,20 @@
+
+# Dependências
+node_modules/
+
+# Resultados e relatórios do Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Arquivos de ambiente e informações sensíveis
+.env
+.env.*
+!.env.example
+
+# Arquivos temporários e logs
+*.log
+.DS_Store
+Thumbs.db

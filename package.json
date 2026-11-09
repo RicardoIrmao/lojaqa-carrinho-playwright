@@ -1,0 +1,20 @@
+
+{
+  "name": "lojaqa-carrinho-playwright",
+  "version": "1.0.0",
+  "description": "Automação de testes E2E e API do módulo de carrinho de compras da LojaQA",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test tests/e2e",
+    "test:api": "playwright test tests/api",
+    "test:headed": "playwright test --headed",
+    "test:carrinho": "playwright test tests/e2e/carrinho-lojaqa.spec.ts",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.2"
+  }
+}
