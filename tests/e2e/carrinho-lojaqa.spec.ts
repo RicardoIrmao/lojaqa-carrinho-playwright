@@ -1,27 +1,15 @@
 
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../../fixtures/loja.fixture";
 import { LojaPage } from "../../pages/loja.page";
 
 test.describe("Módulo 03 - Carrinho de Compras", () => {
 
     test.setTimeout(60000);
 
-    let loja: LojaPage;
+    // CT01 - Adicionar produto ao carrinho
+    test("CT01 - Adicionar produto ao carrinho", async ({ page, lojaAberta }) => {
 
-    test.beforeEach(async ({ page }) => {
-
-        await page.addInitScript(() => {
-            localStorage.removeItem("lojaqa_cart");
-        });
-
-        loja = new LojaPage(page);
-
-        await loja.acessarLoja();
-
-    });
-
-    test("CT01 - Adicionar produto ao carrinho", async ({ page }) => {
-
+        const loja: LojaPage = lojaAberta;
         const nomeProduto = "Teclado Mecânico Aurora RGB";
 
         const produto = page
@@ -40,8 +28,10 @@ test.describe("Módulo 03 - Carrinho de Compras", () => {
 
     });
 
-    test("CT02 - Aumentar quantidade e atualizar total", async ({ page }) => {
+    // CT02 - Aumentar quantidade e atualizar total
+    test("CT02 - Aumentar quantidade e atualizar total", async ({ page, lojaAberta }) => {
 
+        const loja: LojaPage = lojaAberta;
         const nomeProduto = "Teclado Mecânico Aurora RGB";
 
         const produto = page
@@ -64,8 +54,10 @@ test.describe("Módulo 03 - Carrinho de Compras", () => {
 
     });
 
-    test("CT03 - Diminuir quantidade e atualizar total", async ({ page }) => {
+    // CT03 - Diminuir quantidade e atualizar total
+    test("CT03 - Diminuir quantidade e atualizar total", async ({ page, lojaAberta }) => {
 
+        const loja: LojaPage = lojaAberta;
         const nomeProduto = "Teclado Mecânico Aurora RGB";
 
         const produto = page
@@ -92,8 +84,10 @@ test.describe("Módulo 03 - Carrinho de Compras", () => {
 
     });
 
-    test("CT04 - Remover produto ao chegar a zero", async ({ page }) => {
+    // CT04 - Remover produto ao chegar a zero
+    test("CT04 - Remover produto ao chegar a zero", async ({ page, lojaAberta }) => {
 
+        const loja: LojaPage = lojaAberta;
         const nomeProduto = "Teclado Mecânico Aurora RGB";
 
         const produto = page
@@ -117,8 +111,10 @@ test.describe("Módulo 03 - Carrinho de Compras", () => {
 
     });
 
-    test("CT05 - Impedir quantidade acima do estoque disponível", async ({ page }) => {
+    // CT05 - Impedir quantidade acima do estoque disponível
+    test("CT05 - Impedir quantidade acima do estoque disponível", async ({ page, lojaAberta }) => {
 
+        const loja: LojaPage = lojaAberta;
         const nomeProduto = "Suporte Articulado a Gás para 2 Monitores";
 
         const produto = page
@@ -132,16 +128,16 @@ test.describe("Módulo 03 - Carrinho de Compras", () => {
 
         const quantidade = loja.cartItems.locator(".quantity b");
 
-        // O estoque disponível é de apenas uma unidade
+        // O produto possui estoque disponível de uma unidade
         await expect(quantidade).toHaveText("1");
 
-        // Tenta aumentar a quantidade além do estoque
+        // Tenta ultrapassar o limite de estoque
         await loja.aumentarQuantidade(nomeProduto);
 
-        // A quantidade deve permanecer limitada a uma unidade
+        // A quantidade deve continuar limitada a uma unidade
         await expect(quantidade).toHaveText("1");
 
-        // O total não deve ser alterado
+        // O total não deve sofrer alteração
         await expect(loja.cartTotal).toHaveText("R$ 269,90");
 
         console.log("CT05: Limite de estoque respeitado!");

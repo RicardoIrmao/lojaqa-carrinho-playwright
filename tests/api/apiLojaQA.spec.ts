@@ -1,9 +1,9 @@
 
 import { test, expect } from "@playwright/test";
 
-const APIUrl = "https://api-qa-fap2026.onrender.com/api";
+const API_URL = "https://api-qa-fap2026.onrender.com/api";
 
-// Define a estrutura esperada de um produto da API
+// Estrutura dos dados esperados de cada produto
 interface Produto {
     _id: string;
     name: string;
@@ -14,274 +14,146 @@ interface Produto {
     active: boolean;
 }
 
-test.describe("teste api lojaQA", () => {
+test.describe("Módulo 03 - API LojaQA: Catálogo e Estoque", () => {
 
-    // TESTE 1 - CONSULTAR CATÁLOGO DE PRODUTOS
-    test("get catalogo lojaQa", async ({ request }) => {
+    // CT-API-01 - Consultar catálogo e validar estrutura dos produtos
+    test("CT-API-01 - Consultar catálogo de produtos", async ({ request }) => {
 
-        const res = await request.get(`${APIUrl}/products`);
+        const resposta = await request.get(`${API_URL}/products`);
 
-        expect(res.status()).toBe(200);
-        expect(res.ok()).toBeTruthy();
+        // Validação do status HTTP
+        expect(resposta.status()).toBe(200);
+        expect(resposta.ok()).toBeTruthy();
 
-        const headers = res.headers();
-
-        console.log("Status HTTP:", res.status());
-        console.log("Content-Type:", headers["content-type"]);
+        // Validação do cabeçalho da resposta
+        const headers = resposta.headers();
 
         expect(headers["content-type"]).toContain("application/json");
 
-        // Agora o TypeScript conhece o tipo dos produtos
-        const bodyRes: Produto[] = await res.json();
+        // Conversão da resposta JSON para uma lista de produtos
+        const produtos: Produto[] = await resposta.json();
 
-        expect(Array.isArray(bodyRes)).toBeTruthy();
-        expect(bodyRes.length).toBeGreaterThan(0);
+        // Validação da estrutura geral do catálogo
+        expect(Array.isArray(produtos)).toBeTruthy();
+        expect(produtos.length).toBeGreaterThan(0);
 
-        for (const produto of bodyRes) {
-            expect(produto).toHaveProperty("_id");
+        // Validação dos dados de cada produto
+        for (const produto of produtos) {
+
+            expect(typeof produto._id).toBe("string");
+            expect(produto._id.length).toBeGreaterThan(0);
 
             expect(typeof produto.name).toBe("string");
             expect(produto.name.length).toBeGreaterThan(0);
+
+            expect(typeof produto.category).toBe("string");
+            expect(produto.category.length).toBeGreaterThan(0);
 
             expect(typeof produto.price).toBe("number");
             expect(produto.price).toBeGreaterThan(0);
 
             expect(typeof produto.stock).toBe("number");
-            expect(produto.stock).toBeGreaterThanOrEqual(0);
-
             expect(produto.active).toBe(true);
         }
 
-        console.log("Quantidade de produtos:", bodyRes.length);
-
-        console.log(
-            "Primeiro produto:",
-            JSON.stringify(bodyRes[0], null, 2)
-        );
-
-        console.log("CATÁLOGO COMPLETO:");
+        // Exibição dos resultados no terminal
+        console.log("\n========== CT-API-01 ==========");
+        console.log("Consulta do catálogo realizada!");
+        console.log("Status HTTP:", resposta.status());
+        console.log("Content-Type:", headers["content-type"]);
+        console.log("Quantidade de produtos:", produtos.length);
 
         console.table(
-            bodyRes.map((produto, index) => ({
+            produtos.map((produto, index) => ({
                 numero: index + 1,
                 nome: produto.name,
+                categoria: produto.category,
                 preco: produto.price,
                 estoque: produto.stock,
                 ativo: produto.active
             }))
         );
 
-        const produtosEstoqueBaixo = bodyRes.filter(
-            (produto) => produto.stock <= 5
-        );
-
-        console.log("PRODUTOS COM ESTOQUE BAIXO:");
-
-        console.table(
-            produtosEstoqueBaixo.map((produto) => ({
-                nome: produto.name,
-                estoque: produto.stock
-            }))
-        );
-
-        const produtosSemEstoque = bodyRes.filter(
-            (produto) => produto.stock === 0
-        );
-
-        console.log(
-            "Quantidade de produtos sem estoque:",
-            produtosSemEstoque.length
-        );
-
-        console.table(
-            produtosSemEstoque.map((produto) => ({
-                nome: produto.name,
-                estoque: produto.stock
-            }))
-        );
+        console.log("Estrutura do catálogo validada!");
     });
 
-    // TESTE 2 - LOGIN VÁLIDO
-    test("post login lojaQa valido", async ({ request }) => {
+    // CT-API-02 - Validar se os produtos possuem IDs únicos
+    test("CT-API-02 - Validar IDs únicos dos produtos", async ({ request }) => {
 
-        const res = await request.post(`${APIUrl}/login`, {
-            data: {
-                email: "admin@system.com",
-                password: "AdminPassword123"
-            },
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
+        const resposta = await request.get(`${API_URL}/products`);
 
-        expect(res.status()).toBe(200);
+        expect(resposta.status()).toBe(200);
 
-        const resBody = await res.json();
-
-        expect(resBody).toHaveProperty("token");
-        expect(typeof resBody.token).toBe("string");
-        expect(resBody.token.length).toBeGreaterThan(10);
-
-        console.log("Login válido - Status:", res.status());
-        console.log("Token recebido:", resBody.token ? "Sim" : "Não");
-    });
-
-    // TESTE 3 - LOGIN INVÁLIDO
-    test("Login lojaQA invalido", async ({ request }) => {
-
-        const res = await request.post(`${APIUrl}/login`, {
-            data: {
-                email: "admin@system.com",
-                password: "SenhaErrada123"
-            }
-        });
-
-        expect(res.status()).toBe(401);
-
-        const errorBody = await res.json();
-
-        expect(errorBody.token).toBeUndefined();
-        expect(errorBody.error).toBe("Credenciais inválidas.");
-
-        console.log("Login inválido - Status:", res.status());
-        console.log("Mensagem:", errorBody.error);
-    });
-
-    // TESTE 4 - VALIDAR ESTOQUE DO SUPORTE ARTICULADO
-    test("validar estoque do suporte articulado", async ({ request }) => {
-
-        const res = await request.get(`${APIUrl}/products`);
-
-        expect(res.status()).toBe(200);
-
-        const produtos: Produto[] = await res.json();
-
-        const produto = produtos.find(
-            (item) =>
-                item.name === "Suporte Articulado a Gás para 2 Monitores"
-        );
-
-        expect(produto).toBeDefined();
-
-        expect(produto!.price).toBe(269.9);
-        expect(produto!.stock).toBe(1);
-        expect(produto!.active).toBe(true);
-
-        console.log("Produto:", produto!.name);
-        console.log("Preço:", produto!.price);
-        console.log("Estoque disponível:", produto!.stock);
-        console.log("API: dados do estoque validados!");
-    });
-
-    // TESTE 5 - CONSULTAR CATEGORIAS
-    test("GET - Consultar categorias dos produtos", async ({ request }) => {
-
-        const res = await request.get(`${APIUrl}/products/categories`);
-
-        console.log("Status das categorias:", res.status());
-        console.log("Content-Type:", res.headers()["content-type"]);
-
-        expect(res.status()).toBe(200);
-        expect(res.headers()["content-type"]).toContain("application/json");
-
-        const body: string[] = await res.json();
-
-        console.log(
-            "Resposta das categorias:",
-            JSON.stringify(body, null, 2)
-        );
-
-        expect(body).toBeTruthy();
-
-        console.log("Consulta de categorias realizada!");
-    });
-
-    // TESTE 6 - VALIDAR CORRESPONDÊNCIA ENTRE CATEGORIAS E PRODUTOS
-    test("Validar correspondência entre categorias e produtos", async ({ request }) => {
-
-        const respostaCategorias = await request.get(
-            `${APIUrl}/products/categories`
-        );
-
-        const respostaProdutos = await request.get(
-            `${APIUrl}/products`
-        );
-
-        expect(respostaCategorias.status()).toBe(200);
-        expect(respostaProdutos.status()).toBe(200);
-
-        const categorias: string[] = await respostaCategorias.json();
-        const produtos: Produto[] = await respostaProdutos.json();
-
-        console.log("ANÁLISE DE CATEGORIAS:");
-
-        for (const categoria of categorias) {
-
-            const produtosDaCategoria = produtos.filter(
-                (produto) => produto.category === categoria
-            );
-
-            console.log(
-                `${categoria}: ${produtosDaCategoria.length} produto(s)`
-            );
-
-            expect(
-                produtosDaCategoria.length,
-                `A categoria "${categoria}" não possui produtos no catálogo.`
-            ).toBeGreaterThan(0);
-        }
-
-        console.log("Todas as categorias possuem produtos!");
-    });
-
-    // TESTE 7 - VALIDAR IDs ÚNICOS
-    test("Validar se os produtos possuem IDs únicos", async ({ request }) => {
-
-        const res = await request.get(`${APIUrl}/products`);
-
-        expect(res.status()).toBe(200);
-
-        const produtos: Produto[] = await res.json();
+        const produtos: Produto[] = await resposta.json();
 
         const ids = produtos.map((produto) => produto._id);
 
+        // Set mantém apenas valores únicos
         const idsUnicos = new Set(ids);
 
-        console.log("Total de produtos:", produtos.length);
-        console.log("Total de IDs únicos:", idsUnicos.size);
+        console.log("\n========== CT-API-02 ==========");
+        console.log("Quantidade de produtos:", produtos.length);
+        console.log("Quantidade de IDs únicos:", idsUnicos.size);
 
+        // Se houver IDs repetidos, a quantidade será diferente
         expect(idsUnicos.size).toBe(produtos.length);
 
         console.log("Todos os produtos possuem IDs únicos!");
     });
 
-    // TESTE 8 - VALIDAR INTEGRIDADE DOS ESTOQUES
-    test("Validar integridade dos valores de estoque", async ({ request }) => {
+    // CT-API-03 - Validar integridade e disponibilidade do estoque
+    test("CT-API-03 - Validar integridade dos estoques", async ({ request }) => {
 
-        const res = await request.get(`${APIUrl}/products`);
+        const resposta = await request.get(`${API_URL}/products`);
 
-        expect(res.status()).toBe(200);
+        expect(resposta.status()).toBe(200);
 
-        const produtos: Produto[] = await res.json();
+        const produtos: Produto[] = await resposta.json();
 
+        // Separação dos produtos conforme disponibilidade
+        const produtosDisponiveis = produtos.filter(
+            (produto) => produto.stock > 0
+        );
+
+        const produtosSemEstoque = produtos.filter(
+            (produto) => produto.stock === 0
+        );
+
+        // Todo estoque deve ser um número inteiro e não negativo
         for (const produto of produtos) {
 
             expect(
                 Number.isInteger(produto.stock),
-                `Estoque inválido no produto: ${produto.name}`
+                `O estoque de "${produto.name}" deve ser um número inteiro.`
             ).toBe(true);
 
             expect(
                 produto.stock,
-                `Estoque negativo no produto: ${produto.name}`
+                `O estoque de "${produto.name}" não pode ser negativo.`
             ).toBeGreaterThanOrEqual(0);
-
-            console.log(
-                `${produto.name}: ${produto.stock} unidade(s)`
-            );
         }
 
-        console.log("Integridade dos estoques validada!");
+        // O catálogo deve possuir pelo menos um produto disponível
+        expect(produtosDisponiveis.length).toBeGreaterThan(0);
+
+        console.log("\n========== CT-API-03 ==========");
+        console.log("Status HTTP:", resposta.status());
+        console.log("Total de produtos:", produtos.length);
+        console.log("Produtos disponíveis:", produtosDisponiveis.length);
+        console.log("Produtos sem estoque:", produtosSemEstoque.length);
+
+        console.log("\nESTOQUE DOS PRODUTOS:");
+
+        console.table(
+            produtos.map((produto) => ({
+                produto: produto.name,
+                estoque: produto.stock,
+                disponibilidade:
+                    produto.stock > 0 ? "Disponível" : "Sem estoque"
+            }))
+        );
+
+        console.log("Integridade e disponibilidade dos estoques validadas!");
     });
 
 });

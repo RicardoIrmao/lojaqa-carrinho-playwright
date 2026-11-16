@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { LoginPage } from "../../pages/login.page";
+import { SauceDemoLoginPage as LoginPage } from "../../pages/login.page";
 
 let loginPage: LoginPage;
 
